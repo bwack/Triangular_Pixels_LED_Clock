@@ -41,15 +41,15 @@ void send_Time_Set_html()
   if (server.args() > 0 )  // Save Settings
   {
     for ( uint8_t i = 0; i < server.args(); i++ ) {
-      if (server.argName(i) == "set_year") DateTime.year = server.arg(i).toInt();
-      if (server.argName(i) == "set_month") DateTime.month = server.arg(i).toInt();
-      if (server.argName(i) == "set_day") DateTime.day = server.arg(i).toInt();
-      if (server.argName(i) == "set_hour") DateTime.hour = server.arg(i).toInt();
-      if (server.argName(i) == "set_minute") DateTime.minute = server.arg(i).toInt();
-      if (server.argName(i) == "set_second") DateTime.second = server.arg(i).toInt();
+      if (server.argName(i) == "set_year") DateAndTime.year = server.arg(i).toInt();
+      if (server.argName(i) == "set_month") DateAndTime.month = server.arg(i).toInt();
+      if (server.argName(i) == "set_day") DateAndTime.day = server.arg(i).toInt();
+      if (server.argName(i) == "set_hour") DateAndTime.hour = server.arg(i).toInt();
+      if (server.argName(i) == "set_minute") DateAndTime.minute = server.arg(i).toInt();
+      if (server.argName(i) == "set_second") DateAndTime.second = server.arg(i).toInt();
     }
     manual_time_set = true;
-    UnixTimestamp = ConvertDate(DateTime.year, DateTime.month, DateTime.day, DateTime.hour, DateTime.minute, DateTime.second);
+    UnixTimestamp = ConvertDate(DateAndTime.year, DateAndTime.month, DateAndTime.day, DateAndTime.hour, DateAndTime.minute, DateAndTime.second);
     ISRsecondTick();
   }
   server.send_P ( 200, "text/html", PAGE_SetTime );
@@ -61,12 +61,12 @@ void send_Time_Set_values_html()
 {
 
   String values ="";
-  values += "set_year|" + (String) DateTime.year + "|input\n";
-  values += "set_month|" + (String) DateTime.month + "|input\n";
-  values += "set_day|" + (String) DateTime.day + "|input\n";
-  values += "set_hour|" + (String) DateTime.hour + "|input\n";
-  values += "set_minute|" +  (String) DateTime.minute + "|input\n";
-  values += "set_second|" +  (String) DateTime.second + "|input\n";
+  values += "set_year|" + (String) DateAndTime.year + "|input\n";
+  values += "set_month|" + (String) DateAndTime.month + "|input\n";
+  values += "set_day|" + (String) DateAndTime.day + "|input\n";
+  values += "set_hour|" + (String) DateAndTime.hour + "|input\n";
+  values += "set_minute|" +  (String) DateAndTime.minute + "|input\n";
+  values += "set_second|" +  (String) DateAndTime.second + "|input\n";
   server.send ( 200, "text/plain", values);
   Serial.println(__FUNCTION__);
   //AdminTimeOutCounter=0;

@@ -23,7 +23,7 @@ struct strDateTime {
 	byte wday;
 };
 
-strDateTime DateTime; // Global DateTime structure, will be refreshed every Second
+strDateTime DateAndTime; // Global DateAndTime structure, will be refreshed every Second
 const int NTP_PACKET_SIZE = 48;
 byte packetBuffer[NTP_PACKET_SIZE];
 
@@ -54,6 +54,9 @@ void getNTPtime() {
 		int cb = UDPNTPClient.parsePacket();
 		if (cb == 0) {
 			Serial.println("No NTP packet yet");
+			_unixTime = myrtc.now().unixtime();
+			Serial.print("unix time fetced from rtc was ");
+			Serial.println(_unixTime);
 		} else {
 			Serial.print("NTP packet received, length=");
 			Serial.println(cb);
@@ -64,10 +67,14 @@ void getNTPtime() {
 			unsigned long secsSince1900 = highWord << 16 | lowWord;
 			const unsigned long seventyYears = 2208988800UL;
 			_unixTime = secsSince1900 - seventyYears;
+			myDS.setEpoch(_unixTime);
+			Serial.print("unix time was ");
+			Serial.println(_unixTime);
 			ntp_response_ok = true;
 		}
 	} else {
 		Serial.println("Internet not yet connected");
+		_unixTime = myrtc.now().unixtime();
 		delay(500);
 	}
 	yield();
@@ -210,7 +217,7 @@ void ISRsecondTick() {
 	UnixTimestamp++;
 	absoluteActualTime = adjustTimeZone(UnixTimestamp, config.timeZone,
 			config.isDayLightSaving);
-	DateTime = ConvertUnixTimeStamp(absoluteActualTime); //  convert to DateTime format
+	DateAndTime = ConvertUnixTimeStamp(absoluteActualTime); //  convert to DateAndTime format
 	if (millis() - customWatchdog > 30000) {
 		Serial.println("CustomWatchdog bites. Bye");
 		ESP.reset();
@@ -218,4 +225,3 @@ void ISRsecondTick() {
 }
 
 #endif
-

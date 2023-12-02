@@ -6,7 +6,6 @@ boolean firstStart = true;								// On firststart = true, NTP will try to get a
 boolean ntp_response_ok = false;
 boolean manual_time_set = false;
 String chipID;
-int WIFI_connected = false;
 bool CFG_saved = false;
 int color_array[3];
 CRGB solid_color;
@@ -14,10 +13,12 @@ CRGB solid_color;
 WiFiUDP UDPNTPClient;											// NTP Client
 volatile unsigned long UnixTimestamp = 0;	// GLOBALTIME  ( Will be set by NTP)
 int cNTP_Update = 0;											// Counter for Updating the time via NTP
-Ticker tkSecond;												  // Second - Timer for Updating Datetime Structure
+Ticker tkSecond;												  // Second - Timer for Updating DateAndTime Structure
 //custom declarations
 long absoluteActualTime;
 long  customWatchdog;                     // WatchDog to detect main loop blocking. There is a builtin WatchDog to the chip firmare not related to this one
+RTClib myrtc;
+DS3231 myDS;
 
 struct strConfig {
   boolean dhcp;                         // 1 Byte - EEPROM 16

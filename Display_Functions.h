@@ -72,10 +72,10 @@ void TimeInit() {
 	for (int i = 0; i <= NUM_LEDS; i++) {
 		led_list[i] = 0;
 	}
-	int minute_unit = DateTime.minute % 10;
-	int minute_tenth = DateTime.minute / 10;
-	int hour_unit = DateTime.hour % 10;
-	int hour_tenth = DateTime.hour / 10;
+	int minute_unit = DateAndTime.minute % 10;
+	int minute_tenth = DateAndTime.minute / 10;
+	int hour_unit = DateAndTime.hour % 10;
+	int hour_tenth = DateAndTime.hour / 10;
 	switch (minute_unit) {
 	case 0: {
 		led_list[2] = 1; led_list[3] = 1; led_list[4] = 1;

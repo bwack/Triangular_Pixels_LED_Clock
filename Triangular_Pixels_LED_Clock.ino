@@ -4,6 +4,8 @@
  * BVB_WebConfig_OTA_V7 from Andreas Spiess https://github.com/SensorsIot/Internet-of-Things-with-ESP8266
  *
  */
+ 
+
 #define FASTLED_INTERRUPT_RETRY_COUNT 0
 #include "FastLED.h"
 #define LED_TYPE WS2811
@@ -16,6 +18,8 @@ int led_list[NUM_LEDS];
 int temp_minute = 0;
 int temp_second = 0;
 
+#include <DS3231.h>
+#include <Wire.h>
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
 #include <WiFiUdp.h>
@@ -44,10 +48,12 @@ extern "C" {
 }
 
 void setup() {
+	Wire.begin();
 	Serial.begin(115200);
 	//**** Network Config load
 	EEPROM.begin(512); // define an EEPROM space of 512Bytes to store data
 	CFG_saved = ReadConfig();
+	UnixTimestamp = myrtc.now().unixtime();
 
 	//  Connect to WiFi acess point or start as Acess point
 	if (CFG_saved)  //if no configuration yet saved, load defaults
@@ -57,15 +63,16 @@ void setup() {
 		//printConfig();
 		WiFi.mode(WIFI_STA);
 		WiFi.begin(config.ssid.c_str(), config.password.c_str());
+/*
 		WIFI_connected = WiFi.waitForConnectResult();
 		if (WIFI_connected != WL_CONNECTED)
-			Serial.println("Connection Failed! activating the AP mode...");
-
+			Serial.println("Connection Failed!");
+*/
 		Serial.print("Wifi ip:");
 		Serial.println(WiFi.localIP());
 	}
 
-	if ((WIFI_connected != WL_CONNECTED) or !CFG_saved) {
+	if (!CFG_saved) {
 		// DEFAULT CONFIG
 		Serial.println("Setting AP mode default parameters");
 		config.ssid = "TPLedClock"; // SSID of access point
@@ -151,14 +158,30 @@ void setup() {
 // the loop function runs over and over again forever
 void loop() {
 	server.handleClient();
-	if (config.Update_Time_Via_NTP_Every > 0) {
+
+	static int wifistatus_old = 0;
+	int wifistatus =  WiFi.status();
+	if (wifistatus != wifistatus_old) {
+		wifistatus_old = wifistatus;
+		if (wifistatus == WL_CONNECTED) {
+			Serial.println("WiFi connected");
+		}
+		else {
+			Serial.print("WiFi disconnected ");
+			Serial.println(wifistatus, DEC);
+		}
+	}
+  
+  if (config.Update_Time_Via_NTP_Every > 0) {
 		if (cNTP_Update > 5 && firstStart) {
+			Serial.println("first start ntp update > 5");
 			getNTPtime();
-			delay(1500); //wait for DateTime
+			delay(1500); //wait for DateAndTime
 			cNTP_Update = 0;
 			firstStart = false;
 		}
 		else if (cNTP_Update > (config.Update_Time_Via_NTP_Every * 60)) {
+			//Serial.println("get time update");
 			getNTPtime();
 			cNTP_Update = 0;
 		}
@@ -167,38 +190,41 @@ void loop() {
 	customWatchdog = millis();
 
 	//============================
-	if (WIFI_connected != WL_CONNECTED and manual_time_set == false) {
+	if (WiFi.status() != WL_CONNECTED and manual_time_set == false) {
 		config.Update_Time_Via_NTP_Every = 0;
 		//display_led_no_wifi
-		softtwinkles();
-		FastLED.show();
+		//softtwinkles();
+		//FastLED.show();
 	} else if (ntp_response_ok == false and manual_time_set == false) {
 		config.Update_Time_Via_NTP_Every = 1;
 		//display_animation_no_ntp
-		pride();
-		FastLED.show();
+		//pride();
+		//FastLED.show();
+
 	} else if (ntp_response_ok == true or manual_time_set == true) {
-		if (temp_minute != DateTime.minute or temp_minute == 0) {
-			temp_minute = DateTime.minute;
-			random16_add_entropy(analogRead(0));
-			int BgIndex = random8(BgGradientPaletteCount);
-			int TimeIndex = random8(TimeGradientPaletteCount);
-			targetPaletteBg = BgGradientPalettes[BgIndex];
-			targetPaletteTime = TimeGradientPalettes[TimeIndex];
-			Serial.println("minute");
-			Serial.print(BgIndex);Serial.print("-");Serial.println(BgPaletteList[BgIndex]);
-			Serial.print(TimeIndex);Serial.print("-");Serial.println(TimePaletteList[TimeIndex]);
-			TimeInit();
-		}
-		uint8_t maxChanges = 24;
-		nblendPaletteTowardPalette( currentPaletteBg, targetPaletteBg, maxChanges);
-		nblendPaletteTowardPalette( currentPaletteTime, targetPaletteTime, maxChanges);
 
-		static uint8_t startIndex = 0;
-		startIndex = startIndex + 1; /* motion speed */
-		TimeDisplay( startIndex );
-
-		FastLED.show();
-		FastLED.delay(1000 / UPDATES_PER_SECOND);
 	}
+
+	if (temp_minute != DateAndTime.minute or temp_minute == 0) {
+		temp_minute = DateAndTime.minute;
+		random16_add_entropy(analogRead(0));
+		int BgIndex = random8(BgGradientPaletteCount);
+		int TimeIndex = random8(TimeGradientPaletteCount);
+		targetPaletteBg = BgGradientPalettes[BgIndex];
+		targetPaletteTime = TimeGradientPalettes[TimeIndex];
+		//Serial.println("minute");
+		//Serial.print(BgIndex);Serial.print("-");Serial.println(BgPaletteList[BgIndex]);
+		//Serial.print(TimeIndex);Serial.print("-");Serial.println(TimePaletteList[TimeIndex]);
+		TimeInit();
+	}
+	uint8_t maxChanges = 24;
+	nblendPaletteTowardPalette( currentPaletteBg, targetPaletteBg, maxChanges);
+	nblendPaletteTowardPalette( currentPaletteTime, targetPaletteTime, maxChanges);
+
+	static uint8_t startIndex = 0;
+	startIndex = startIndex + 1; /* motion speed */
+	TimeDisplay( startIndex );
+
+	FastLED.show();
+	FastLED.delay(1000 / UPDATES_PER_SECOND);
 }
